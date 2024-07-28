@@ -1,0 +1,16 @@
+builtin_interfaces/Time stamp
+string frame_id
+float32 pose_point_x
+float32 pose_point_y
+float32 pose_quaternion_x
+float32 pose_quaternion_y
+float32 pose_quaternion_z
+float32 pose_quaternion_w
+float32 twist_linear_x
+float32 twist_angular_z
+float32 angular_velocity_x
+float32 angular_velocity_y
+float32 angular_velocity_z
+float32 linear_acceleration_x
+float32 linear_acceleration_y
+float32 linear_acceleration_z

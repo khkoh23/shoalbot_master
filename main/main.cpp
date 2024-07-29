@@ -29,7 +29,9 @@
 #include <sensor_msgs/msg/imu.h>
 #include <sensor_msgs/msg/battery_state.h>
 #include <nav_msgs/msg/odometry.h>
-//#include <my_custom_message/msg/my_custom_message.h>
+#include <shoalbot_msgs/msg/fast.h>
+#include <shoalbot_msgs/msg/medium.h>
+#include <shoalbot_msgs/msg/slow.h>
 
 #include "esp32_serial_transport.h"
 #include "kinco_can.h"
@@ -39,6 +41,9 @@
 #include "bms_485.h"
 #include "shoalbot_master_i2c.h"
 #include "estop.h"
+
+//#include "esp_intr_alloc.h"
+#include "esp_intr_types.h"
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc);vTaskDelete(NULL);}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
@@ -489,6 +494,14 @@ void micro_ros_task(void * arg) {
 	vTaskDelete(NULL);
 }
 
+void twai_task(void *arg) { // Kinco motor task
+	while (1) {
+		setTargetVelocity(1, left_input_filtered); 
+		setTargetVelocity(2, right_input_filtered); 
+	}
+	vTaskDelete(NULL);
+}
+
 void spi_task(void *arg) { // IMU and safety encoder data task
 	while (1) {
 		gyro_x = imu.get_gyro_x(); 
@@ -574,14 +587,6 @@ void rs485_task(void *arg) { // BMS task
 	vTaskDelete(NULL);
 }
 
-void twai_task(void *arg) { // Kinco motor task
-	while (1) {
-		setTargetVelocity(1, left_input_filtered); 
-		setTargetVelocity(2, right_input_filtered); 
-	}
-	vTaskDelete(NULL);
-}
-
 void i2c_task(void *arg) { // I2C master task
 	//i2c.cntrl_BMSpass(0b001); // Pass2 0, Pass1 0, BMS 1
 	// DO 9 8 7 6 5 4 3 2 1 0
@@ -621,6 +626,8 @@ extern "C" void app_main(void) {
 	vTaskDelay(pdMS_TO_TICKS(10));
 	my_i2c.begin();
 
+	esp_intr_dump(NULL);
+
 	#if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
 		rmw_uros_set_custom_transport(true, (void *) &uart_port, esp32_serial_open, esp32_serial_close, esp32_serial_write, esp32_serial_read);
 	#else
@@ -629,13 +636,12 @@ extern "C" void app_main(void) {
 
 	xTaskCreate(micro_ros_task, "micro_ros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
 	//xTaskCreatePinnedToCore(micro_ros_task, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL, 0);
+	xTaskCreate(twai_task, "twai_task", 16000, NULL, 5, NULL);
+	//xTaskCreatePinnedToCore(twai_task, "twai_task", 16000, NULL, 5, NULL, 0);
 	xTaskCreate(spi_task, "spi_task", 16000, NULL, 5, NULL);
-	//xTaskCreatePinnedToCore(spi_task, "spi_task", 16000, NULL, 5, NULL, 0);
+	//xTaskCreatePinnedToCore(spi_task, "spi_task", 16000, NULL, 5, NULL, 1);
 	xTaskCreate(rs485_task, "rs485_task", 16000, NULL, 5, NULL);
-	//xTaskCreatePinnedToCore(rs485_task, "rs485_task", 16000, NULL, 5, NULL, 0);
-	//xTaskCreate(twai_task, "twai_task", 16000, NULL, 5, NULL);
-	xTaskCreatePinnedToCore(twai_task, "twai_task", 16000, NULL, 5, NULL, 0);
-	//xTaskCreate(i2c_task, "i2c_task", 16000, NULL, 5, NULL);
-	xTaskCreatePinnedToCore(i2c_task, "i2c_task", 16000,  NULL, 5, NULL, 1);
-
+	//xTaskCreatePinnedToCore(rs485_task, "rs485_task", 16000, NULL, 5, NULL, 1);
+	xTaskCreate(i2c_task, "i2c_task", 16000, NULL, 5, NULL);
+	//xTaskCreatePinnedToCore(i2c_task, "i2c_task", 16000,  NULL, 5, NULL, 1);
 }

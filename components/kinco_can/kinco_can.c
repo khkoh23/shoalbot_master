@@ -2,8 +2,9 @@
 
 void initTwai (const uint8_t tx, const uint8_t rx) {
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
+    //twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NO_ACK);
     //twai_general_config_t g_config = {.mode = TWAI_MODE_NORMAL, .tx_io = tx, .rx_io = rx, .tx_queue_len = 0};
-    //g_config.tx_queue_len = 0;
+//    g_config.intr_flags = ESP_INTR_FLAG_HIGH;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     if (twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK) {

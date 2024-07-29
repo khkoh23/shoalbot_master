@@ -30,6 +30,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti ${FLAGS} ${IDF
 add_compile_definitions(ESP_PLATFORM LWIP_IPV4 LWIP_IPV6 PLATFORM_NAME_FREERTOS)
 
 include_directories(
-        "/home/khkoh/esp/shoalbot_serial/build/config"
+        "/home/khkoh/esp/shoalbot_master/build/config"
         ${idf_path}/components/soc/${idf_target}/include
     )

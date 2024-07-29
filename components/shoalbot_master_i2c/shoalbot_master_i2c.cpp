@@ -8,6 +8,7 @@ shoalbot_master_i2c::shoalbot_master_i2c(i2c_master_config* conf) {
     i2c_mst_config.glitch_ignore_cnt = 7;
     i2c_mst_config.flags.enable_internal_pullup = true;
     i2c_mst_config.trans_queue_depth = 10;
+//    i2c_mst_config.intr_priority = 1;
 
     ESP_slave.dev_addr_length = I2C_ADDR_BIT_LEN_7;
     ESP_slave.device_address = conf -> slaveAddr;

@@ -102,8 +102,9 @@ sensor_msgs__msg__BatteryState bms_msg;
 nav_msgs__msg__Odometry odom_msg;
 std_msgs__msg__Int32 di_msg;
 //my_custom_message__msg__MyCustomMessage custom_msg;
-rcl_subscription_t twist_subscriber;
+rcl_subscription_t twist_subscriber, do_subscriber;
 geometry_msgs__msg__Twist twist_msg;
+std_msgs__msg__Int32 do_msg;
 
 static size_t uart_port = UART_NUM_0; // UART port for micro-ROS
 
@@ -151,7 +152,7 @@ shoalbot_master_i2c my_i2c(&i2c_config);
 int32_t di_buffer;
 bool new_DO = false;
 bool new_DI = false;
-uint8_t slave_do[3] = {0xBB, 0x00, 0x00}; // first byte to indicating DO cmd, second bit 2 MSB
+uint8_t slave_do[3] = {0xBB, 0x00, 0x0B}; // first byte to indicating DO cmd, second bit 2 MSB
 uint16_t master_do = 0;
 
 bms_485 bms;
@@ -213,6 +214,14 @@ void twist_callback(const void * msgin) {
 	right_speed = (twist_msg.linear.x + (twist_msg.angular.z*wheel_base_*0.5)) / (wheel_diameter_*M_PI) * 60 * gear_ratio_; 
 	left_input_filtered = left_input_filter.process(left_speed);
 	right_input_filtered = right_input_filter.process(right_speed);
+}
+
+void do_callback(const void * msgin) {
+	uint32_t do_data = do_msg.data;
+	slave_do[2] = do_data & 0x000000FF; // Do0-DO7 (Slave)
+    slave_do[1] = (do_data & 0x00000300) >> 8; // Do8-DO9 (Slave)
+    master_do = (do_data & 0x000FFC00) >> 10; // Do10-DO19 (Master)
+    new_DO = true;
 }
 
 void battery_ros_init(void) { // Initializes the ROS topic information for Batery
@@ -384,7 +393,7 @@ void di_timer_callback(rcl_timer_t * timer, int64_t last_call_time) {
 	RCLC_UNUSED(last_call_time);
 	if (timer != NULL) {
 		di_msg.data = di_buffer; 
-		RCSOFTCHECK(rcl_publish(&bms_publisher, &bms_msg, NULL));
+		RCSOFTCHECK(rcl_publish(&di_publisher, &di_msg, NULL));
 	}
 }
 /*
@@ -428,6 +437,7 @@ void micro_ros_task(void * arg) {
 
 	// Create subscriber
 	RCCHECK(rclc_subscription_init_default(&twist_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist), "cmd_vel"))
+	RCCHECK(rclc_subscription_init_default(&do_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "do"))
 
 	// Create timer
 	//rcl_timer_t imu_timer, odom_timer, bms_timer, custom_timer;
@@ -456,6 +466,7 @@ void micro_ros_task(void * arg) {
 	RCCHECK(rclc_executor_add_timer(&executor, &di_timer));
 //	RCCHECK(rclc_executor_add_timer(&executor, &custom_timer));
 	RCCHECK(rclc_executor_add_subscription(&executor, &twist_subscriber, &twist_msg, &twist_callback, ON_NEW_DATA));
+	RCCHECK(rclc_executor_add_subscription(&executor, &do_subscriber, &do_msg, &do_callback, ON_NEW_DATA));
 
 	sync_time();
 
@@ -467,6 +478,7 @@ void micro_ros_task(void * arg) {
 
 	// Free resources
 	RCCHECK(rcl_subscription_fini(&twist_subscriber, &node));
+	RCCHECK(rcl_subscription_fini(&do_subscriber, &node));
 	RCCHECK(rcl_publisher_fini(&imu_publisher, &node));
 	RCCHECK(rcl_publisher_fini(&odom_publisher, &node));
 	RCCHECK(rcl_publisher_fini(&bms_publisher, &node));
@@ -574,14 +586,16 @@ void i2c_task(void *arg) { // I2C master task
 	//i2c.cntrl_BMSpass(0b001); // Pass2 0, Pass1 0, BMS 1
 	// DO 9 8 7 6 5 4 3 2 1 0
 	//    0 0 0 0 0 0 1 0 1 1
-	vTaskDelay(pdMS_TO_TICKS(100));
-	uint8_t slave_do[3] = {0xBB, 0x00, 0x0B}; //first byte to indicate DO cmd, second bit 2 MSB TODO: global variable?
+//	vTaskDelay(pdMS_TO_TICKS(100));
+//	uint8_t slave_do[3] = {0xBB, 0x00, 0x0B}; //first byte to indicate DO cmd, second bit 2 MSB TODO: global variable?
 	//uint8_t slave_do[3] = {0xBB, 0x00, 0x08}; 
-	my_i2c.i2c_send_DO(slave_do);
-	vTaskDelay(pdMS_TO_TICKS(100));
+//	my_i2c.i2c_send_DO(slave_do);
+//	vTaskDelay(pdMS_TO_TICKS(100));
 	while (1) {
 		di_buffer = my_i2c.read_di();
-		vTaskDelay(pdMS_TO_TICKS(250));
+		vTaskDelay(pdMS_TO_TICKS(100));
+		my_i2c.i2c_send_DO(slave_do);
+		vTaskDelay(pdMS_TO_TICKS(100));
 	}
 	vTaskDelete(NULL);
 }
@@ -621,7 +635,7 @@ extern "C" void app_main(void) {
 	//xTaskCreatePinnedToCore(rs485_task, "rs485_task", 16000, NULL, 5, NULL, 0);
 	//xTaskCreate(twai_task, "twai_task", 16000, NULL, 5, NULL);
 	xTaskCreatePinnedToCore(twai_task, "twai_task", 16000, NULL, 5, NULL, 0);
-//	xTaskCreate(i2c_task, "i2c_task", 16000, NULL, 5, NULL);
+	//xTaskCreate(i2c_task, "i2c_task", 16000, NULL, 5, NULL);
 	xTaskCreatePinnedToCore(i2c_task, "i2c_task", 16000,  NULL, 5, NULL, 1);
 
 }

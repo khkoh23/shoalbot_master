@@ -61,9 +61,9 @@ uint32_t shoalbot_master_i2c::read_di() {
         //ESP_LOGE(TAG, "Failed to rectrieve DI");
         return ret;
     }
-    //ESP_LOGI("I2C", "Data received 1: 0x%02X\n", DI_data[0]);
-    //ESP_LOGI("I2C", "Data received 2: 0x%02X\n", DI_data[1]);
-    //ESP_LOGI("I2C", "Data received 3: 0x%02X\n", DI_data[2]);
+    ESP_LOGI("I2C", "Data received 1: 0x%02X\n", DI_data[0]);
+    ESP_LOGI("I2C", "Data received 2: 0x%02X\n", DI_data[1]);
+    ESP_LOGI("I2C", "Data received 3: 0x%02X\n", DI_data[2]);
     DI_fromSlave = ((uint32_t)DI_data[0]) << 16 | ((uint32_t)DI_data[1]) << 8 | ((uint32_t)DI_data[2]);
     return DI_fromSlave;
 }

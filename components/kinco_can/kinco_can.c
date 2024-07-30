@@ -3,7 +3,15 @@
 void initTwai (const uint8_t tx, const uint8_t rx) {
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
     //twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NO_ACK);
-    //twai_general_config_t g_config = {.mode = TWAI_MODE_NORMAL, .tx_io = tx, .rx_io = rx, .tx_queue_len = 0};
+    /*twai_general_config_t g_config = {
+        .mode = TWAI_MODE_NORMAL, 
+        .tx_io = tx, 
+        .rx_io = rx, 
+        .clkout_io = -1,
+        .bus_off_io = -1,
+        .tx_queue_len = 0,
+        .intr_flags = ESP_INTR_FLAG_IRAM,
+    };*/
 //    g_config.intr_flags = ESP_INTR_FLAG_HIGH;
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
@@ -23,7 +31,7 @@ void initTwai (const uint8_t tx, const uint8_t rx) {
     setModesOfOperation(2, 3); 
 }
 
-void setTargetVelocity (const uint8_t id, const int32_t msg) { //60FF 
+void setTargetVelocity (const uint8_t id, int32_t msg) { //60FF 
     int32_t rpm = msg*2730.6666667*-1; //TODO why?
     uint8_t d1 = (rpm & 0x000000FF) >> 0; 
     uint8_t d2 = (rpm & 0x0000FF00) >> 8; 

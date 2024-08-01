@@ -50,39 +50,87 @@ esp_err_t shoalbot_master_i2c::i2c_send_DO(uint8_t* data) { // first byte 0xBB f
         //ESP_LOGE(TAG, "Failed to transmit data");
         return ret;
     }
-    return ret;
     vTaskDelay(1);
-}
-
-uint32_t shoalbot_master_i2c::read_di() {
-    DI_fromSlave = 0;
-    ret = i2c_master_transmit_receive(i2c_master_handle, DI_cmd, sizeof(DI_cmd), DI_data, 3, -1);
-    if(ret != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to rectrieve DI");
-        return ret;
-    }
-    ESP_LOGI("I2C", "Data received 1: 0x%02X\n", DI_data[0]);
-    ESP_LOGI("I2C", "Data received 2: 0x%02X\n", DI_data[1]);
-    ESP_LOGI("I2C", "Data received 3: 0x%02X\n", DI_data[2]);
-    DI_fromSlave = ((uint32_t)DI_data[0]) << 16 | ((uint32_t)DI_data[1]) << 8 | ((uint32_t)DI_data[2]);
-    return DI_fromSlave;
-}
-/*
-esp_err_t shoalbot_master_i2c::cntrl_BMSpass(uint8_t data) { 
-    // Bit 0: BMS, Bit 1: Pass1, Bit 2: Pass2
-    uint8_t toBe_transferred[2] = {};
-    toBe_transferred[0] = 0xCC;
-    toBe_transferred[1] = data;
-    ret = i2c_master_transmit(i2c_master_handle, toBe_transferred, 1, 10);
+    ret = i2c_master_transmit(i2c_master_handle, data + 3, 1, 10);
     if(ret != ESP_OK) {
         //ESP_LOGE(TAG, "Failed to transmit data");
         return ret;
     }
     vTaskDelay(1);
-    ret = i2c_master_transmit(i2c_master_handle, toBe_transferred + 1, 1, 10);
+    ret = i2c_master_transmit(i2c_master_handle, data + 4, 1, 10);
+    if(ret != ESP_OK) {
+        //ESP_LOGE(TAG, "Failed to transmit data");
+        return ret;
+    }
+    vTaskDelay(1);
+    ret = i2c_master_transmit(i2c_master_handle, data + 5, 1, 10);
+    if(ret != ESP_OK) {
+        //ESP_LOGE(TAG, "Failed to transmit data");
+        return ret;
+    }
+    // printf("sending DO\n");
     return ret;
 }
 
+uint32_t shoalbot_master_i2c::read_state() {
+    DI_fromSlave = 0;
+    ret = i2c_master_transmit_receive(i2c_master_handle, DI_cmd, sizeof(DI_cmd), state_data, 6, -1);
+    if(ret != ESP_OK) {
+        //ESP_LOGE(TAG, "Failed to rectrieve DI");
+        return ret;
+    }
+    ESP_LOGI("I2C", "DI 1: 0x%02X\n", state_data[0]);
+    ESP_LOGI("I2C", "DI 2: 0x%02X\n", state_data[1]);
+    ESP_LOGI("I2C", "DI 3: 0x%02X\n", state_data[2]);
+    ESP_LOGI("I2C", "DI 4: 0x%02X\n", state_data[3]);
+    ESP_LOGI("I2C", "DI 5: 0x%02X\n", state_data[4]);
+    ESP_LOGI("I2C", "DI 6: 0x%02X\n", state_data[5]);
+    DI_fromSlave = ((uint32_t)state_data[0]) << 16 | ((uint32_t)state_data[1]) << 8 | ((uint32_t)state_data[2]);
+    DO_slave[0] = state_data[3];
+    DO_slave[1] = 0x03 & state_data[4];
+    return DI_fromSlave;
+}
+
+// esp_err_t shoalbot_master_i2c::write_BMS(uint32_t data) { 
+//     // Bit 0: BMS, Bit 1: Pass1, Bit 2: Pass2
+//     uint8_t percentage[5] = {};
+//     percentage[0] = 0xCC;
+//     percentage[1] = (data >> 24) & 0xFF; // highest byte (MSB)
+//     percentage[2] = (data >> 16) & 0xFF; // second highest byte
+//     percentage[3] = (data >> 8) & 0xFF;  // second lowest byte
+//     percentage[4] = data & 0xFF;         // lowest byte (LSB)
+//     ret = i2c_master_transmit(i2c_master_handle, percentage, 1, 10);
+//         if(ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to transmit data");
+//             return ret;
+//         }
+//     vTaskDelay(1);
+//     ret = i2c_master_transmit(i2c_master_handle, percentage + 1, 1, 10);
+//         if(ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to transmit data");
+//             return ret;
+//         }
+//     vTaskDelay(1);
+//     ret = i2c_master_transmit(i2c_master_handle, percentage + 2, 1, 10);
+//         if(ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to transmit data");
+//             return ret;
+//         }
+//     vTaskDelay(1);
+//     ret = i2c_master_transmit(i2c_master_handle, percentage + 3, 1, 10);
+//         if(ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to transmit data");
+//             return ret;
+//         }
+//     vTaskDelay(1);
+//     ret = i2c_master_transmit(i2c_master_handle, percentage + 4, 1, 10);
+//         if(ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to transmit data");
+//             return ret;
+//         }
+//     return ret;
+// }
+/*
 bool shoalbot_master_i2c::check_BATSW() {
     ret = i2c_master_transmit_receive(i2c_master_handle, batSW_cmd, sizeof(batSW_cmd), &batSW, 1, -1);
     //printf("BATSW: %d\n", batSW);

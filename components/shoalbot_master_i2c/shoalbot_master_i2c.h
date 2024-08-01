@@ -8,7 +8,7 @@
 #define ACK_CHECK_EN 0x1                        
 #define ACK_CHECK_DIS 0x0                      
 
-//static const char *TAG = "i2c-master";
+static const char *TAG = "i2c-master";
 
 typedef struct {
     gpio_num_t sda;
@@ -32,9 +32,9 @@ class shoalbot_master_i2c {
         shoalbot_master_i2c(i2c_master_config* conf);
         esp_err_t begin();
         esp_err_t i2c_send_DO(uint8_t* data);
-        uint32_t read_di();
-//        esp_err_t cntrl_BMSpass(uint8_t data); // 0xCC to pass BMS, Pass to slave
-//        bool check_BATSW();
+        uint32_t read_state();
+        esp_err_t write_BMS(uint32_t data); // 0xCC to pass BMS, Pass to slave
+//      bool check_BATSW();
     
     private:
         i2c_master_bus_config_t i2c_mst_config = {};
@@ -44,7 +44,8 @@ class shoalbot_master_i2c {
         i2c_master_event_callbacks_t cbs;
         esp_err_t ret;
 
-        uint8_t DI_data[3] = {};
+        uint8_t state_data[6] = {};
+        uint8_t DO_slave[2] = {};
         uint8_t DI_cmd[1] = {0xFF}; // indicating to the slave to send DI data
         uint8_t batSW_cmd[1] = {0xDD}; // indicating to the slave to send BATSW data
 

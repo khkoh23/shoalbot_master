@@ -31,7 +31,7 @@ void initTwai (const uint8_t tx, const uint8_t rx) {
     setModesOfOperation(2, 3); 
 }
 
-void setTargetVelocity (const uint8_t id, int32_t msg) { //60FF 
+void setTargetVelocity (const uint8_t id, const int32_t msg) { //60FF 
     int32_t rpm = msg*2730.6666667*-1; //TODO why?
     uint8_t d1 = (rpm & 0x000000FF) >> 0; 
     uint8_t d2 = (rpm & 0x0000FF00) >> 8; 

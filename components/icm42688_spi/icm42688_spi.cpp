@@ -47,8 +47,8 @@ esp_err_t icm42688_spi::begin() {
     }
     ret = spi_bus_add_device(SPI2_HOST, &devcfg, &handle);
     if(ret != ESP_OK) return ret;
-    ret = who_am_i();
-    if(ret != ESP_OK) return ret;
+//    ret = who_am_i();
+//    if(ret != ESP_OK) return ret;
     ret = write_spi(ICM42688reg::PWR_MGMT0, 0x0F, 2); // turn on gyro and accel sensors in LN mode
     if(ret != ESP_OK) return ret;
     vTaskDelay(5);

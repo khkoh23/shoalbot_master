@@ -13,7 +13,7 @@ extern "C" {
 #include "driver/twai.h"
 
 void initTwai (const uint8_t tx, const uint8_t rx);
-void setTargetVelocity (const uint8_t id, int32_t msg);
+void setTargetVelocity (const uint8_t id, const int32_t msg);
 void setModesOfOperation (const uint8_t id, const int8_t msg);
 void setProfileAcceleration (const uint8_t, const uint32_t msg);
 void setProfileDeceleration (const uint8_t, const uint32_t msg);

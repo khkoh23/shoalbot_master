@@ -79,15 +79,23 @@ uint32_t shoalbot_master_i2c::read_state() {
         //ESP_LOGE(TAG, "Failed to rectrieve DI");
         return ret;
     }
-    ESP_LOGI("I2C", "DI 1: 0x%02X\n", state_data[0]);
-    ESP_LOGI("I2C", "DI 2: 0x%02X\n", state_data[1]);
-    ESP_LOGI("I2C", "DI 3: 0x%02X\n", state_data[2]);
-    ESP_LOGI("I2C", "DI 4: 0x%02X\n", state_data[3]);
-    ESP_LOGI("I2C", "DI 5: 0x%02X\n", state_data[4]);
-    ESP_LOGI("I2C", "DI 6: 0x%02X\n", state_data[5]);
+    // ESP_LOGI("I2C", "Data Read 1: 0x%02X\n", state_data[0]);
+    // ESP_LOGI("I2C", "Data Read 2: 0x%02X\n", state_data[1]);
+    // ESP_LOGI("I2C", "Data Read 3: 0x%02X\n", state_data[2]);
+    // ESP_LOGI("I2C", "Data Read 4: 0x%02X\n", state_data[3]);
+    // ESP_LOGI("I2C", "Data Read 5: 0x%02X\n", state_data[4]);
+    // ESP_LOGI("I2C", "Data Read 6: 0x%02X\n", state_data[5]);
     DI_fromSlave = ((uint32_t)state_data[0]) << 16 | ((uint32_t)state_data[1]) << 8 | ((uint32_t)state_data[2]);
     DO_slave[0] = state_data[3];
     DO_slave[1] = 0x03 & state_data[4];
+    AMR_state[1] = state_data[4] >> 2;
+    AMR_state[0] = state_data[5];
+
+    ESP_LOGI("I2C", "DI: 0x%08X\n", static_cast<unsigned int>(DI_fromSlave));
+    ESP_LOGI("I2C", "DO: 0x%02X\n", DO_slave[0]);
+    ESP_LOGI("I2C", "DO1: 0x%02X\n", DO_slave[1]);
+    ESP_LOGI("I2C", "AMR: 0x%02X\n", AMR_state[0]);
+    ESP_LOGI("I2C", "AMR1: 0x%02X\n", AMR_state[1]);
     return DI_fromSlave;
 }
 

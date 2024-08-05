@@ -46,6 +46,7 @@ class shoalbot_master_i2c {
 
         uint8_t state_data[6] = {};
         uint8_t DO_slave[2] = {};
+        uint8_t AMR_state[2] = {};
         uint8_t DI_cmd[1] = {0xFF}; // indicating to the slave to send DI data
         uint8_t batSW_cmd[1] = {0xDD}; // indicating to the slave to send BATSW data
 

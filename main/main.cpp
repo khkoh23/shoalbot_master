@@ -157,8 +157,9 @@ shoalbot_master_i2c my_i2c(&i2c_config);
 int32_t di_buffer;
 bool new_DO = false;
 bool new_DI = false;
-uint8_t slave_do[3] = {0xBB, 0x00, 0x0B}; // first byte to indicating DO cmd, second bit 2 MSB
+uint8_t slave_do[6] = {0xBB, 0x00, 0x0B, 0x01, 0x00, 0x00}; // first byte to indicating DO cmd, second bit 2 MSB
 uint16_t master_do = 0;
+uint32_t bat_percentage = 0;
 
 bms_485 bms;
 ESTOP estop;
@@ -594,13 +595,18 @@ void i2c_task(void *arg) { // I2C master task
 	//i2c.cntrl_BMSpass(0b001); // Pass2 0, Pass1 0, BMS 1
 	// DO 9 8 7 6 5 4 3 2 1 0
 	//    0 0 0 0 0 0 1 0 1 1
-//	vTaskDelay(pdMS_TO_TICKS(100));
-//	uint8_t slave_do[3] = {0xBB, 0x00, 0x0B}; //first byte to indicate DO cmd, second bit 2 MSB TODO: global variable?
-	//uint8_t slave_do[3] = {0xBB, 0x00, 0x08}; 
-//	my_i2c.i2c_send_DO(slave_do);
-//	vTaskDelay(pdMS_TO_TICKS(100));
+	// slave_do[0] = {0xBB}
+	// slave_do[1] = {0, 0, 0, 0, 0, 0, DO9, DO8} MSB PART OF SLAVE DO
+	// slave_do[2] = {DO7, DO6, DO5, DO4, DO3, DO2, DO1, DO0} LSB PART OF SLAVE DO
+	// slave_do[3] = {0, 0, 0, 0, 0, 0, 0, nav_st9, nav_st8} MSB PART OF NAV STATUS
+	// slave_do[4] = {nav_st7, nav_st6, nav_st5, nav_st4, nav_st3, nav_st2, nav_st1, nav_st0} LSB PART OF NAV STATUS
+	// slave_do[5] = BMS PERCENTAGE
+
+	float a = 97.3;
+	slave_do[5] = (uint8_t) a;
+
 	while (1) {
-		di_buffer = my_i2c.read_di();
+		di_buffer = my_i2c.read_state();
 		vTaskDelay(pdMS_TO_TICKS(100));
 		my_i2c.i2c_send_DO(slave_do);
 		vTaskDelay(pdMS_TO_TICKS(100));
@@ -611,9 +617,10 @@ void i2c_task(void *arg) { // I2C master task
 extern "C" void app_main(void) {
 	vTaskDelay(pdMS_TO_TICKS(10));
 	estop.begin();
-	initTwai(CAN1_TX, CAN1_RX);
+	// initTwai(CAN1_TX, CAN1_RX);
 	vTaskDelay(pdMS_TO_TICKS(10));
 	battery_ros_init();
+	initTwai(CAN1_TX, CAN1_RX);
 	imu.begin();
 	imu_ros_init();
 	left_encoder.begin();
@@ -631,17 +638,17 @@ extern "C" void app_main(void) {
 
 	esp_intr_dump(NULL);
 
-	#if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
-		rmw_uros_set_custom_transport(true, (void *) &uart_port, esp32_serial_open, esp32_serial_close, esp32_serial_write, esp32_serial_read);
-	#else
-		#error micro-ROS transports misconfigured
-	#endif  // RMW_UXRCE_TRANSPORT_CUSTOM
+	// #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
+	// 	rmw_uros_set_custom_transport(true, (void *) &uart_port, esp32_serial_open, esp32_serial_close, esp32_serial_write, esp32_serial_read);
+	// #else
+	// 	#error micro-ROS transports misconfigured
+	// #endif  // RMW_UXRCE_TRANSPORT_CUSTOM
 
-	xTaskCreate(micro_ros_task, "micro_ros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+	// xTaskCreate(micro_ros_task, "micro_ros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
 	//xTaskCreatePinnedToCore(micro_ros_task, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL, 0);
 	xTaskCreate(spi_task, "spi_task", 16000, NULL, 5, NULL);
 	//xTaskCreatePinnedToCore(spi_task, "spi_task", 16000, NULL, 5, NULL, 1);
-	xTaskCreate(rs485_task, "rs485_task", 16000, NULL, 5, NULL);
+	// xTaskCreate(rs485_task, "rs485_task", 16000, NULL, 5, NULL);
 	//xTaskCreatePinnedToCore(rs485_task, "rs485_task", 16000, NULL, 5, NULL, 1);
 	xTaskCreate(twai_task, "twai_task", 16000, NULL, 5, NULL);
 	//xTaskCreatePinnedToCore(twai_task, "twai_task", 16000, NULL, 5, NULL, 1);

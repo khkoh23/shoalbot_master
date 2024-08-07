@@ -638,13 +638,13 @@ extern "C" void app_main(void) {
 
 	esp_intr_dump(NULL);
 
-	// #if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
-	// 	rmw_uros_set_custom_transport(true, (void *) &uart_port, esp32_serial_open, esp32_serial_close, esp32_serial_write, esp32_serial_read);
-	// #else
-	// 	#error micro-ROS transports misconfigured
-	// #endif  // RMW_UXRCE_TRANSPORT_CUSTOM
+	#if defined(RMW_UXRCE_TRANSPORT_CUSTOM)
+		rmw_uros_set_custom_transport(true, (void *) &uart_port, esp32_serial_open, esp32_serial_close, esp32_serial_write, esp32_serial_read);
+	#else
+		#error micro-ROS transports misconfigured
+	#endif  // RMW_UXRCE_TRANSPORT_CUSTOM
 
-	// xTaskCreate(micro_ros_task, "micro_ros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
+	xTaskCreate(micro_ros_task, "micro_ros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL);
 	//xTaskCreatePinnedToCore(micro_ros_task, "uros_task", CONFIG_MICRO_ROS_APP_STACK, NULL, CONFIG_MICRO_ROS_APP_TASK_PRIO, NULL, 0);
 	xTaskCreate(spi_task, "spi_task", 16000, NULL, 5, NULL);
 	//xTaskCreatePinnedToCore(spi_task, "spi_task", 16000, NULL, 5, NULL, 1);

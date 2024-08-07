@@ -88,6 +88,7 @@ uint32_t shoalbot_master_i2c::read_state() {
     DI_fromSlave = ((uint32_t)state_data[0]) << 16 | ((uint32_t)state_data[1]) << 8 | ((uint32_t)state_data[2]);
     DO_slave[0] = state_data[3];
     DO_slave[1] = 0x03 & state_data[4];
+    
     AMR_state[1] = state_data[4] >> 2;
     AMR_state[0] = state_data[5];
 
